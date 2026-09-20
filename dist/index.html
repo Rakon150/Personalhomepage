@@ -5,22 +5,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="style.css" rel="stylesheet">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
-  <title>Rakon150</title>
+  <title>About Rakon150</title>
 </head>
 
 <body class="pattern-background">
   <main>
     <h1>Rakon150</h1>
     <div class="buttons">
-      <a href="#"><button>LINKS</button></a>
-      <a href="#"><button>ABOUT</button></a>
-      <a href="#"><button>PROJECTS</button></a>
-      <a href="#"><button>CONTACT</button></a>
+      <button data-section="LINKS">LINKS</button>
+      <button data-section="ABOUT">ABOUT</button>
+      <button data-section="PROJECTS">PROJECTS</button>
+      <button data-section="CONTACT">CONTACT</button>
     </div>
   </main>
-  <span class="footer"><b>WIP</b> (for now)</span>
+
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div id="backdrop" class="backdrop"></div>
+    <div id="morph" class="morph" role="dialog" aria-modal="true" aria-labelledby="morph-title">
+      <div class="morph-header">
+        <h2 id="morph-title" class="morph-title"></h2>
+        <button id="morph-close" class="morph-close" aria-label="Close">✕</button>
+      </div>
+      <div id="morph-body" class="morph-body"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
