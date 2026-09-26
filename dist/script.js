@@ -71,7 +71,7 @@ const sections = {
     </div>
 
     <div class="continue-projects">
-      <button type="button" onclick="window.location.href='./projects/projects.html';">MORE</button>
+      <button type="button" onclick="window.location.href='/projects/';">MORE</button>
     </div>
   `,
   CONTACT: `
