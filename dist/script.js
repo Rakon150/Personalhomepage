@@ -66,12 +66,12 @@ const sections = {
     </div>
     <div class="content-card">
         <h3><a href="https://github.com/racek256/Purkynthon/" target="_blank" rel="noopener noreferrer">Purkynthon</a> <span style="opacity:.6; font-weight:400; font-size:0.9rem;">November 2025 – January 2026</span></h3>
-        <p>Web game made for Purkiáda 2026 event at <a href="https://purkynka.cz" target="_blank">Purkyňka</a> for 9. graders <i>(site probably not running)</i></p>
-        <p>JavaScript • Python • Tailwind CSS • React</p>
+        <p>Educational web-based game for 8./9. graders created for <a href="https://purkiada.sspbrno.cz" target="_blank" rel="noopener noreferrer">Purkiáda 2026</a></p>
+        <p>React • Tailwind CSS • Python</p>
     </div>
 
     <div class="continue-projects">
-      <button type="button" onclick="window.location.href='https://rakon.qzz.io/projects';">MORE</button>
+      <button type="button" onclick="window.location.href='./projects/projects.html';">MORE</button>
     </div>
   `,
   CONTACT: `

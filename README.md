@@ -1,2 +1,2 @@
-# homepage
-Personal site or something mainly for hackclub
+# Personal Homepage
+Selfhosted portfolio website created mainly for Hackclub Stardance
