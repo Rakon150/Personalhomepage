@@ -1,15 +1,23 @@
-# [Personal homepage](https://rakon.qzz.io) - Created for Hackclub Stardance event
+# [Personal homepage](https://rakon.qzz.io)
+Minimal personal portfolio with links, about, projects, and contact options.
 
----
+Built for Hackclub Stardance.
+
+![Homepage preview](preview.png)
+
+**Selfhosted on: https://rakon.qzz.io**
+
+## Quick start
+Just open the link or download and open the html its not that complicated
 
 ## Features
 - **LINKS**
-    - Random links to my profiles
+    - GitHub, Steam, itch.io, Discord
 - **ABOUT**
-    - Random info + live Discord status via Lanyard
+    - location, OS, software, hardware + live Discord status via Lanyard
 - **PROJECTS**
-    - Newest projects + full grid at `/projects`
+    - newest projects + full grid at `/projects/`
 - **CONTACT**
-    - Discord handle, GitHub + Lanyard presence
+    - Discord, GitHub + Lanyard presence
 - **UI**
-    - HTML/CSS/JS, carbon imitation background, button morph animation
+    - button to popup animation, carbon imitation background
