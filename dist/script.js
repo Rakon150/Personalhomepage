@@ -222,3 +222,36 @@ window.addEventListener("resize", () => {
 });
 
 morph.addEventListener("click", (e) => e.stopPropagation());
+
+const API = "https://status.rakon.qzz.io/api/status-page/publicstatus";
+const dot = document.getElementById("status-dot");
+
+function setState(state, label) {
+  if (!dot) return;
+  dot.classList.remove("up", "degraded", "down");
+  if (state) dot.classList.add(state);
+  dot.title = label;
+  dot.setAttribute("aria-label", label);
+}
+
+async function status_check() {
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error("bad status");
+    const text = await res.text();
+
+    const values = [...text.matchAll(/^monitor_status\{.*\}\s+(\d)\s*$/gm)].map((m) => +m[1]);
+    if (!values.length) throw new Error("no monitors");
+
+    const down = values.filter((v) => v === 0).length;
+
+    if (down === values.length) setState("down");
+    else if (down > 0 || values.some((v) => v === 2 || v === 3)) setState("degraded");
+    else setState("up");
+  } catch {
+    setState("down");
+  }
+}
+
+status_check();
+setInterval(status_check, 60000);
