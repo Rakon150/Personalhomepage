@@ -223,7 +223,7 @@ window.addEventListener("resize", () => {
 
 morph.addEventListener("click", (e) => e.stopPropagation());
 
-const API = "https://status.rakon.qzz.io/api/status-page/publicstatus";
+const API = "https://status.rakon.qzz.io/api/status-page/heartbeat/publicstatus";
 const dot = document.getElementById("status-dot");
 
 function setState(state, label) {
@@ -236,11 +236,13 @@ function setState(state, label) {
 
 async function status_check() {
   try {
-    const res = await fetch(API);
+    const res = await fetch(API + "?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("bad status");
-    const text = await res.text();
+    const data = await res.json();
 
-    const values = [...text.matchAll(/^monitor_status\{.*\}\s+(\d)\s*$/gm)].map((m) => +m[1]);
+    const values = Object.values(data.heartbeatList || {})
+      .map((list) => list && list[list.length - 1] && list[list.length - 1].status)
+      .filter((v) => typeof v === "number");
     if (!values.length) throw new Error("no monitors");
 
     const down = values.filter((v) => v === 0).length;
