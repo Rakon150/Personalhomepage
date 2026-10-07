@@ -73,6 +73,7 @@ const sections = {
     <div class="continue-projects">
       <button type="button" onclick="window.location.href='/projects/';">MORE</button>
     </div>
+    </div>
   `,
   CONTACT: `
     <div class="content-section">
@@ -105,26 +106,85 @@ let activeSection = null;
 let isAnimating = false;
 let isOpen = false;
 
+const mobileBreakpoint = 768;
+const margin = 8;
+
+const clamp = (n, min, max) => Math.min(Math.max(n, min), Math.max(min, max));
+
+function getViewport() {
+  const vv = window.visualViewport;
+  return vv?.width > 0 && vv?.height > 0
+    ? { vw: vv.width, vh: vv.height }
+    : { vw: window.innerWidth, vh: window.innerHeight };
+}
+
+function getMaxHeight() {
+  const { vw, vh } = getViewport();
+  const mobile = vw <= mobileBreakpoint;
+  return Math.min(mobile ? vh * 0.88 : vh * 0.85, vh - margin * 2);
+}
+
+function getMinHeight(maxH) {
+  const { vw } = getViewport();
+  const mobile = vw <= mobileBreakpoint;
+  return Math.min(mobile ? 120 : 160, maxH);
+}
+
 function getFinalRect() {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const isMobile = vw < 768;
+  const { vw, vh } = getViewport();
+  const isMobile = vw <= mobileBreakpoint;
+  const cappedWidth = Math.min(isMobile ? vw * 0.88 : vw * 0.42, isMobile ? 360 : 560, vw - margin * 2);
+  const finalWidth = cappedWidth;
+  const maxH = getMaxHeight();
+  const minH = getMinHeight(maxH);
+  const height = clamp(
+    Math.min(isMobile ? vh * 0.6 : vh * 0.735, isMobile ? 520 : maxH, maxH),
+    minH,
+    maxH
+  );
 
-  if (isMobile) {
-    const width = vw - 32;
-    const height = Math.min(vh * 0.7, 600);
-    const left = 16;
-    const top = (vh - height) / 2;
-    return { top, left, width, height };
-  }
-
-  const width = Math.min(560, vw * 0.42);
-  const height = vh * 0.735;
-  const marginRight = Math.max(24, vw * 0.05);
-  const left = vw - width - marginRight;
+  const left = (vw - finalWidth) / 2;
   const top = (vh - height) / 2;
 
-  return { top, left, width, height };
+  return {
+    width: finalWidth,
+    height,
+    left: clamp(left, margin, Math.max(margin, vw - finalWidth - margin)),
+    top: clamp(top, margin, Math.max(margin, vh - height - margin)),
+  };
+}
+
+function fitMorphToContent(animate = false) {
+  if (!morph.classList.contains("visible")) return;
+  const { vw, vh } = getViewport();
+  const maxH = getMaxHeight();
+  const minH = getMinHeight(maxH);
+  const finalWidth = getFinalRect().width;
+  const centeredLeft = clamp((vw - finalWidth) / 2, margin, Math.max(margin, vw - finalWidth - margin));
+
+  if (animate) morph.classList.add("animating");
+
+  morph.style.transform = "none";
+  morph.style.width = `${finalWidth}px`;
+  morph.style.left = `${centeredLeft}px`;
+  morph.style.maxHeight = `${maxH}px`;
+  morph.style.minHeight = `${minH}px`;
+  morph.style.height = "auto";
+
+  const natural = morph.offsetHeight;
+
+  let finalH;
+  if (natural >= maxH - 1) {
+    finalH = maxH;
+    morph.style.height = `${maxH}px`;
+  } else {
+    finalH = Math.max(natural, minH);
+    morph.style.height = "auto";
+  }
+
+  const top = clamp((vh - finalH) / 2, margin, Math.max(margin, vh - finalH - margin));
+  morph.style.top = `${top}px`;
+  morph.style.left = `${centeredLeft}px`;
 }
 
 function lockScroll(lock) {
@@ -138,23 +198,47 @@ function open(section, btn) {
   activeSection = section;
 
   const first = btn.getBoundingClientRect();
-  const last = getFinalRect();
+  const { vh } = getViewport();
+  const maxH = getMaxHeight();
+  const minH = getMinHeight(maxH);
+  const probe = getFinalRect();
 
   morph.classList.remove("animating", "show-content");
+  morph.style.transform = "none";
+  morphTitle.textContent = section;
+  morphBody.innerHTML = sections[section] || "";
+  morphBody.scrollTop = 0;
+  morph.style.maxHeight = `${maxH}px`;
+  morph.style.minHeight = `${minH}px`;
+  morph.style.width = `${probe.width}px`;
+  morph.style.left = `${probe.left}px`;
+  morph.style.top = `${clamp((vh - minH) / 2, margin, Math.max(margin, vh - minH - margin))}px`;
+  morph.style.height = "auto";
+  morph.style.opacity = "0";
+  morph.classList.add("visible");
+
+  const natural = morph.offsetHeight;
+  const isMaxed = natural >= maxH - 1;
+  const finalH = isMaxed ? maxH : Math.max(natural, minH);
+  const last = {
+    width: probe.width,
+    height: finalH,
+    left: probe.left,
+    top: clamp((vh - finalH) / 2, margin, Math.max(margin, vh - finalH - margin)),
+  };
+
   morph.style.top = `${first.top}px`;
   morph.style.left = `${first.left}px`;
   morph.style.width = `${first.width}px`;
   morph.style.height = `${first.height}px`;
-  morph.style.opacity = "1";
-  morph.classList.add("visible");
   overlay.classList.add("open");
   overlay.setAttribute("aria-hidden", "false");
-  morphTitle.textContent = section;
-  morphBody.innerHTML = sections[section] || "";
   lockScroll(true);
+  void morph.offsetHeight;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      morph.style.opacity = "1";
       morph.classList.add("animating");
       morph.style.top = `${last.top}px`;
       morph.style.left = `${last.left}px`;
@@ -166,6 +250,22 @@ function open(section, btn) {
       setTimeout(() => {
         isAnimating = false;
         isOpen = true;
+
+        morph.classList.remove("animating");
+        morph.style.transform = "none";
+
+        morph.style.width = `${last.width}px`;
+        morph.style.left = `${last.left}px`;
+        morph.style.top = `${last.top}px`;
+        if (isMaxed) {
+          morph.style.height = `${maxH}px`;
+        } else {
+          morph.style.height = "auto";
+  
+          const settled = morph.offsetHeight;
+          const settledTop = clamp((getViewport().vh - settled) / 2, margin, Math.max(margin, getViewport().vh - settled - margin));
+          morph.style.top = `${settledTop}px`;
+        }
       }, 400);
     });
   });
@@ -179,6 +279,8 @@ function close() {
 
   morph.classList.remove("show-content");
   morph.classList.add("animating");
+  morph.style.maxHeight = "";
+  morph.style.minHeight = "";
 
   requestAnimationFrame(() => {
     morph.style.top = `${first.top}px`;
@@ -211,19 +313,26 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") close();
 });
 
-window.addEventListener("resize", () => {
+function syncOpenRect() {
   if (!isOpen || isAnimating || !morph.classList.contains("visible")) return;
-  const last = getFinalRect();
   morph.classList.remove("animating");
-  morph.style.top = `${last.top}px`;
-  morph.style.left = `${last.left}px`;
-  morph.style.width = `${last.width}px`;
-  morph.style.height = `${last.height}px`;
-});
+  morph.style.transform = "none";
+
+  fitMorphToContent(false);
+  morph.classList.remove("animating");
+  morph.style.transform = "none";
+}
+
+window.addEventListener("resize", syncOpenRect);
+window.addEventListener("orientationchange", syncOpenRect);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncOpenRect);
+  window.visualViewport.addEventListener("scroll", syncOpenRect);
+}
 
 morph.addEventListener("click", (e) => e.stopPropagation());
 
-const API = "https://status.rakon.qzz.io/api/status-page/publicstatus";
+const API = "https://status.rakon.qzz.io/api/status-page/heartbeat/publicstatus";
 const dot = document.getElementById("status-dot");
 
 function setState(state, label) {
@@ -236,11 +345,13 @@ function setState(state, label) {
 
 async function status_check() {
   try {
-    const res = await fetch(API);
+    const res = await fetch(API + "?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("bad status");
-    const text = await res.text();
+    const data = await res.json();
 
-    const values = [...text.matchAll(/^monitor_status\{.*\}\s+(\d)\s*$/gm)].map((m) => +m[1]);
+    const values = Object.values(data.heartbeatList || {})
+      .map((list) => list && list[list.length - 1] && list[list.length - 1].status)
+      .filter((v) => typeof v === "number");
     if (!values.length) throw new Error("no monitors");
 
     const down = values.filter((v) => v === 0).length;
