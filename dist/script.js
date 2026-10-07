@@ -120,42 +120,47 @@ function getViewport() {
 
 function getMaxHeight() {
   const { vw, vh } = getViewport();
-  const mobile = vw <= mobileBreakpoint;
+  const mobile = vw < mobileBreakpoint;
   return Math.min(mobile ? vh * 0.88 : vh * 0.85, vh - margin * 2);
 }
 
 function getMinHeight(maxH) {
   const { vw } = getViewport();
-  const mobile = vw <= mobileBreakpoint;
+  const mobile = vw < mobileBreakpoint;
   return Math.min(mobile ? 120 : 160, maxH);
+}
+
+function isMobileView() {
+  return getViewport().vw < mobileBreakpoint;
 }
 
 function getFinalRect() {
   const { vw, vh } = getViewport();
-  const isMobile = vw <= mobileBreakpoint;
-  const cappedWidth = Math.min(isMobile ? vw * 0.88 : vw * 0.42, isMobile ? 360 : 560, vw - margin * 2);
-  const finalWidth = cappedWidth;
-  const maxH = getMaxHeight();
-  const minH = getMinHeight(maxH);
-  const height = clamp(
-    Math.min(isMobile ? vh * 0.6 : vh * 0.735, isMobile ? 520 : maxH, maxH),
-    minH,
-    maxH
-  );
-
-  const left = (vw - finalWidth) / 2;
+  if (vw < mobileBreakpoint) {
+    const finalWidth = Math.min(vw * 0.88, 360, vw - margin * 2);
+    const maxH = getMaxHeight();
+    const minH = getMinHeight(maxH);
+    const height = clamp(Math.min(vh * 0.6, 520, maxH), minH, maxH);
+    const left = (vw - finalWidth) / 2;
+    const top = (vh - height) / 2;
+    return {
+      width: finalWidth,
+      height,
+      left: clamp(left, margin, Math.max(margin, vw - finalWidth - margin)),
+      top: clamp(top, margin, Math.max(margin, vh - height - margin)),
+    };
+  }
+  const width = Math.min(560, vw * 0.42);
+  const height = vh * 0.735;
+  const marginRight = Math.max(24, vw * 0.05);
+  const left = vw - width - marginRight;
   const top = (vh - height) / 2;
-
-  return {
-    width: finalWidth,
-    height,
-    left: clamp(left, margin, Math.max(margin, vw - finalWidth - margin)),
-    top: clamp(top, margin, Math.max(margin, vh - height - margin)),
-  };
+  return { top, left, width, height };
 }
 
 function fitMorphToContent(animate = false) {
   if (!morph.classList.contains("visible")) return;
+  if (!isMobileView()) return;
   const { vw, vh } = getViewport();
   const maxH = getMaxHeight();
   const minH = getMinHeight(maxH);
@@ -191,12 +196,42 @@ function lockScroll(lock) {
   document.body.style.overflow = lock ? "hidden" : "";
 }
 
-function open(section, btn) {
-  if (isAnimating || isOpen) return;
-  isAnimating = true;
-  activeBtn = btn;
-  activeSection = section;
+function openDesktop(section, btn) {
+  const first = btn.getBoundingClientRect();
+  const last = getFinalRect();
+  morph.classList.remove("animating", "show-content");
+  morph.style.transform = "none";
+  morph.style.maxHeight = "";
+  morph.style.minHeight = "";
+  morph.style.top = `${first.top}px`;
+  morph.style.left = `${first.left}px`;
+  morph.style.width = `${first.width}px`;
+  morph.style.height = `${first.height}px`;
+  morph.style.opacity = "1";
+  morph.classList.add("visible");
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  morphTitle.textContent = section;
+  morphBody.innerHTML = sections[section] || "";
+  morphBody.scrollTop = 0;
+  lockScroll(true);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      morph.classList.add("animating");
+      morph.style.top = `${last.top}px`;
+      morph.style.left = `${last.left}px`;
+      morph.style.width = `${last.width}px`;
+      morph.style.height = `${last.height}px`;
+      setTimeout(() => morph.classList.add("show-content"), 80);
+      setTimeout(() => {
+        isAnimating = false;
+        isOpen = true;
+      }, 400);
+    });
+  });
+}
 
+function openMobile(section, btn) {
   const first = btn.getBoundingClientRect();
   const { vh } = getViewport();
   const maxH = getMaxHeight();
@@ -271,6 +306,15 @@ function open(section, btn) {
   });
 }
 
+function open(section, btn) {
+  if (isAnimating || isOpen) return;
+  isAnimating = true;
+  activeBtn = btn;
+  activeSection = section;
+  if (isMobileView()) openMobile(section, btn);
+  else openDesktop(section, btn);
+}
+
 function close() {
   if (!isOpen || isAnimating || !activeBtn) return;
   isAnimating = true;
@@ -315,9 +359,20 @@ document.addEventListener("keydown", (e) => {
 
 function syncOpenRect() {
   if (!isOpen || isAnimating || !morph.classList.contains("visible")) return;
+  if (!isMobileView()) {
+    const last = getFinalRect();
+    morph.classList.remove("animating");
+    morph.style.transform = "none";
+    morph.style.maxHeight = "";
+    morph.style.minHeight = "";
+    morph.style.top = `${last.top}px`;
+    morph.style.left = `${last.left}px`;
+    morph.style.width = `${last.width}px`;
+    morph.style.height = `${last.height}px`;
+    return;
+  }
   morph.classList.remove("animating");
   morph.style.transform = "none";
-
   fitMorphToContent(false);
   morph.classList.remove("animating");
   morph.style.transform = "none";

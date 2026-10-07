@@ -113,9 +113,6 @@ main {
     will-change: top, left, width, height, opacity;
     transform: none;
     z-index: 40;
-    height: auto;
-    min-height: 160px;
-    max-height: 85vh;
 }
 
 .morph.visible {
@@ -404,6 +401,7 @@ main {
     .morph {
         max-height: 88vh;
         min-height: 120px;
+        height: auto;
     }
 
     .morph-body {
